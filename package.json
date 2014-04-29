@@ -1,0 +1,25 @@
+{
+  "name": "oauthio",
+  "version": "0.0.0",
+  "description": "OAuth that just works ! This is the Node.js SDK for OAuth.io.",
+  "main": "index.js",
+  "scripts": {
+    "test": "istanbul cover jasmine-node tests/unit/spec"
+  },
+  "author": "oauth.io",
+  "license": "Apache2",
+  "devDependencies": {
+    "grunt-concurrent": "^0.5.0",
+    "grunt-contrib-uglify": "^0.4.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt": "^0.4.4",
+    "grunt-contrib-coffee": "^0.10.1",
+    "rewire": "^2.0.0",
+    "nock": "^0.27.3",
+    "unwire": "0.0.4"
+  },
+  "dependencies": {
+    "q": "^1.0.1",
+    "request": "^2.34.0"
+  }
+}
