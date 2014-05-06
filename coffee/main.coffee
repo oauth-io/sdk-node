@@ -48,7 +48,7 @@ module.exports = ->
 			return cache.oauthd_url
 		getVersion: ->
 			package_info.version
-		generateCSRFToken: (req) ->
+		generateStateToken: (req) ->
 			csrf_generator(req)
 		initEndpoints: (app) ->
 			endpoints_initializer app

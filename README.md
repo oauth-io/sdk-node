@@ -103,7 +103,7 @@ Let's say your endpoint will be on /oauth/state_token :
 
 ```JavaScript
 app.get('/oauth/state_token', function (req, res) {
-    var token = OAuth.generateCSRFToken(req);
+    var token = OAuth.generateStateToken(req);
     
     res.send(200, {
         token:token
@@ -260,7 +260,7 @@ Initializes the SDK by storing your app key and secret inside its cache.
 
 *State token generation*
 ```JavaScript
-var token = OAuth.generateCSRFToken(req);
+var token = OAuth.generateStateToken(req);
 ```
 Returns a token and stores it in the session.
 

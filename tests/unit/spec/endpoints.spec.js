@@ -59,7 +59,7 @@ describe('OAuth endpoints initialization', function() {
 
 	it('The generated endpoint /oauth/authenticate should authenticate on oauth.io.', function(done) {
 		values.OAuth.initEndpoints(values.express_app);
-		values.OAuth.generateCSRFToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req);
 		var endpoint = values.express_app.getEndpoint('POST /oauth/authenticate');
 		expect(endpoint).toBeDefined();
 
@@ -100,7 +100,7 @@ describe('OAuth endpoints initialization', function() {
 
 	it('The generated endpoint /oauth/authenticate should throw 400 An error occured during authentication on error', function(done) {
 		values.OAuth.initEndpoints(values.express_app);
-		values.OAuth.generateCSRFToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req);
 		var endpoint = values.express_app.getEndpoint('POST /oauth/authenticate');
 		expect(endpoint).toBeDefined();
 

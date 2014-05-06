@@ -6,7 +6,7 @@ describe('OAuth requests', function() {
 		values = require('../init_tests')();
 		values.OAuth.initialize('somekey', 'somesecret');
 
-		values.OAuth.generateCSRFToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req);
 
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
@@ -38,7 +38,7 @@ describe('OAuth requests', function() {
 		done();
 	});
 
-	it('OAuth.create(, ) should return an object with the provider info + the methods get,post, patch, put and delete', function(done) {
+	it('OAuth.create() should return an object with the provider info + the methods get,post, patch, put and delete', function(done) {
 		expect(typeof values.OAuth.create(values.express_app.req, 'facebook')).toBe('object');
 		expect(values.OAuth.create(values.express_app.req, 'facebook').access_token).toBe('result_access_token');
 		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').get).toBe('function');
@@ -50,7 +50,7 @@ describe('OAuth requests', function() {
 		done();
 	});
 
-	it('OAuth.create(, ).get|patch|post|put|del|me() should fail with "Not authenticated for provider \'provider\'" if not authenticated', function(done) {
+	it('OAuth.create().get|patch|post|put|del|me() should fail with "Not authenticated for provider \'provider\'" if not authenticated', function(done) {
 		values.express_app.req.session.oauth['facebook'] = undefined;
 		values.OAuth.create(values.express_app.req, 'facebook')
 			.get('/me')
@@ -60,7 +60,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).get() should call oauth.io to make a GET request to an API endpoint', function(done) {
+	it('OAuth.create().get() should call oauth.io to make a GET request to an API endpoint', function(done) {
 		var url = '/me';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -86,7 +86,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).post() should call oauth.io to make a POST request to an API endpoint', function(done) {
+	it('OAuth.create().post() should call oauth.io to make a POST request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -116,7 +116,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).put() should call oauth.io to make a PUT request to an API endpoint', function(done) {
+	it('OAuth.create().put() should call oauth.io to make a PUT request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -146,7 +146,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).patch() should call oauth.io to make a PATCH request to an API endpoint', function(done) {
+	it('OAuth.create().patch() should call oauth.io to make a PATCH request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -177,7 +177,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).del() should call oauth.io to make a DELETE request to an API endpoint', function(done) {
+	it('OAuth.create().del() should call oauth.io to make a DELETE request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -208,7 +208,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).me() should call a GET on oauthd/auth/me to get user info', function (done) {
+	it('OAuth.create().me() should call a GET on oauthd/auth/me to get user info', function (done) {
 		var url = '/auth/facebook/me';
 		url = encodeURIComponent(url);
 		var scope = nock('https://oauth.io')
@@ -232,7 +232,7 @@ describe('OAuth requests', function() {
 		});
 	});
 
-	it('OAuth.create(, ).me(filter) should call a GET on oauthd/auth/me?filter to get user info', function(done) {
+	it('OAuth.create().me(filter) should call a GET on oauthd/auth/me?filter to get user info', function(done) {
 
 		var url = '/auth/facebook/me?' + qs.stringify({
 			filter: 'firstname,lastname'
@@ -260,7 +260,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create(, ).me() should be able to handle an 501 error when a provider\'s me is not implemented', function (done) {
+	it('OAuth.create().me() should be able to handle an 501 error when a provider\'s me is not implemented', function (done) {
 		var url = '/auth/facebook/me';
 		url = encodeURIComponent(url);
 		var scope = nock('https://oauth.io')
@@ -282,7 +282,7 @@ describe('OAuth requests', function() {
 		});
 	});
 
-	it('OAuth.create(, ).me() should be able to handle any other error with a standard message', function (done) {
+	it('OAuth.create().me() should be able to handle any other error with a standard message', function (done) {
 		var url = '/auth/facebook/me';
 		url = encodeURIComponent(url);
 		var scope = nock('https://oauth.io')

@@ -9,7 +9,7 @@ describe("OAuth authentication", function() {
 
 	it("should be able to send the code to an oauthd instance in exchange for an access token", function(done) {
 		values.OAuth.initialize('somekey', 'somesecret');
-		values.OAuth.generateCSRFToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req);
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
 				code: 'somecode',
@@ -37,7 +37,7 @@ describe("OAuth authentication", function() {
 
 	it("should throw 'State is missing from response' when state is not returned", function(done) {
 		values.OAuth.initialize('somekey', 'somesecret');
-		values.OAuth.generateCSRFToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req);
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
 				code: 'somecode',
@@ -65,7 +65,7 @@ describe("OAuth authentication", function() {
 
 	it("should throw 'State is not matching' when state from response is not matching a state in cache", function(done) {
 		values.OAuth.initialize('somekey', 'somesecret');
-		values.OAuth.generateCSRFToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req);
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
 				code: 'somecode',

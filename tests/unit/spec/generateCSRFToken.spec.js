@@ -1,16 +1,16 @@
 var values = {};
 
-describe('generateCSRFToken', function () {
+describe('generateStateToken', function () {
 	beforeEach(function () {
 		values = require('../init_tests')();
 	});
 
 	it ('should create a unique id and store it in the session', function () {
 
-		expect(values.OAuth.generateCSRFToken).toBeDefined();
-		expect(typeof values.OAuth.generateCSRFToken).toBe('function');
+		expect(values.OAuth.generateStateToken).toBeDefined();
+		expect(typeof values.OAuth.generateStateToken).toBe('function');
 
-		var token = values.OAuth.generateCSRFToken(values.express_app.req);
+		var token = values.OAuth.generateStateToken(values.express_app.req);
 
 		expect(typeof token).toBe('string');
 		expect(typeof values.express_app.req.session.csrf_tokens).toBe('object');
