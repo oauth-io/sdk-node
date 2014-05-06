@@ -27,7 +27,7 @@ In the server-side OAuth authentication flow, the oauth token never leaves your 
 
 To authenticate a user, the flow follows these steps :
 
-- Ask for a unique CSRF token to the backend. This token will be used as a state for communicating with oauth.io
+- Ask for a state token to the backend. This token will be used to communicate with oauth.io
 - Show a popup or redirect your user to request his permission to use his/her account on the requested provider
 - The latter gives you a code, that you give to your backend
 - The backend sends the code to oauth.io with other information like the oauth.io app's public key and secret.
@@ -121,7 +121,7 @@ To do that, you have to create an authentication endpoint on your backend. This 
 
 ```JavaScript
 app.post('/api/signin', function (req, res) {
-    OAuth.authenticate(JSON.parse(req.body).code, req)
+    OAuth.auth(JSON.parse(req.body).code, req)
     .then(function (result) {
         //result contains the access_token if OAuth 2.0
         //or the couple oauth_token,oauth_token_secret if OAuth 1.0
@@ -159,7 +159,7 @@ app.post('/api/wall_message', function (req, res){
     var data = JSON.parse(req.body);
     //data contains field "message", containing the message to post
     
-    OAuth.getUserAuth(req).callProvider('facebook')
+    OAuth.create(req, 'facebook')
         .post('/me/feed', {
             message: data.message
         })
@@ -267,7 +267,7 @@ Returns a token and stores it in the session.
 *Authentication*
 
 ```JavaScript
-var promise = OAuth.authenticate(code, req);
+var promise = OAuth.auth(code, req);
 ```
 
 Retrieves the access token from oauth.io by sending the code, which was sent by the front-end.
@@ -283,14 +283,14 @@ promise.then(success_callback).fail(error_callback);
 *Getting a user's authentication object for a given provider*
 
 ```JavaScript
-var authentication_object = OAuth.getUserAuth(req).callProvider('provider_name')
+var authentication_object = OAuth.create(req, 'provider_name')
 ```
 
 This returns an authentication object for the current user and the given provider.
 
 **Authentication object**
 
-The authentication object refers to what is returned by the `authenticate` and `callProvider` methods.
+The authentication object refers to what is returned by the `auth` and `create` methods.
 
 It contains the following :
 
