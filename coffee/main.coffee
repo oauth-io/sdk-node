@@ -52,31 +52,28 @@ module.exports = ->
 			csrf_generator(req)
 		initEndpoints: (app) ->
 			endpoints_initializer app
-		authenticate: (code, req) ->
+		auth: (code, req) ->
 			authentication.authenticate code, req
-		getUserAuth: (req) ->
-			return {
-				callProvider: (provider_name) ->
-					response = req?.session?.oauth?[provider_name]
-					if not response?
-						response = {
-							error: true
-							provider: provider_name
-						}
+		create: (req, provider_name) ->
+			response = req?.session?.oauth?[provider_name]
+			if not response?
+				response = {
+					error: true
+					provider: provider_name
+				}
 
-					response.get = (url) ->
-						return requestio.make_request(response, 'GET', url)
-					response.post = (url, options) ->
-						return requestio.make_request(response, 'POST',url, options)
-					response.patch = (url, options) ->
-						return requestio.make_request(response, 'PATCH', url, options)
-					response.put = (url, options) ->
-						return requestio.make_request(response, 'PUT', url, options)
-					response.del = (url, options) ->
-						return requestio.make_request(response, 'DELETE', url, options)
-					response.me = (options) ->
-						return requestio.make_me_request(response, options)	
-					return response
-			}
+			response.get = (url) ->
+				return requestio.make_request(response, 'GET', url)
+			response.post = (url, options) ->
+				return requestio.make_request(response, 'POST',url, options)
+			response.patch = (url, options) ->
+				return requestio.make_request(response, 'PATCH', url, options)
+			response.put = (url, options) ->
+				return requestio.make_request(response, 'PUT', url, options)
+			response.del = (url, options) ->
+				return requestio.make_request(response, 'DELETE', url, options)
+			response.me = (options) ->
+				return requestio.make_me_request(response, options)	
+			return response
 	}
 	

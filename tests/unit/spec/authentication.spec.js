@@ -24,7 +24,7 @@ describe("OAuth authentication", function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.authenticate('somecode', values.express_app.req)
+		values.OAuth.auth('somecode', values.express_app.req)
 		.then(function(result) {
 			expect(result.access_token).toBe('result_access_token');
 			done();
@@ -51,7 +51,7 @@ describe("OAuth authentication", function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.authenticate('somecode', values.express_app.req)
+		values.OAuth.auth('somecode', values.express_app.req)
 		.then(function(result) {
 			expect(result).not.toBeDefined();
 			done();
@@ -80,7 +80,7 @@ describe("OAuth authentication", function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.authenticate('somecode', values.express_app.req)
+		values.OAuth.auth('somecode', values.express_app.req)
 		.then(function(result) {
 			expect(result).not.toBeDefined();
 			done();
