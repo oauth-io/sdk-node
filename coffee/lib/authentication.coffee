@@ -22,8 +22,8 @@ module.exports = (cache, requestio) ->
 				if (not req?.session?.csrf_tokens? or response.state not in req.session.csrf_tokens)
 					defer.reject new Error 'State is not matching'
 
-				response.get = (url) ->
-					return requestio.make_request(response, 'GET', url)
+				response.get = (url, options) ->
+					return requestio.make_request(response, 'GET', url, options)
 				response.post = (url, options) ->
 					return requestio.make_request(response, 'POST',url, options)
 				response.patch = (url, options) ->

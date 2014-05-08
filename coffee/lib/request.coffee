@@ -23,19 +23,25 @@ module.exports = (cache) ->
 				oauthio:
 					k: cache.public_key
 			if (tokens.oauth_token and tokens.oauth_token_secret)
-				headers.oauthio.oauthv1 = '1'
+				headers.oauthio.oauthv = '1'
 			for k of tokens
 				headers.oauthio[k] = tokens[k]
 			headers.oauthio = qs.stringify headers.oauthio
 
 			url = encodeURIComponent url
 			url = "/" + url unless url[0] is "/"
-			url = cache.oauthd_url + "/request/" + r.provider + url 
+			url = cache.oauthd_url + "/request/" + r.provider + url
+			get_options = undefined
+			if (method == 'GET')
+				get_options = options
+				options = undefined
+
 			options = {
 				method: method,
 				url: url,
 				headers: headers,
-				form: options
+				form: options,
+				qs: get_options
 			}
 
 			request(options, (error, r, body) ->
@@ -103,7 +109,7 @@ module.exports = (cache) ->
 						response = JSON.parse body
 					if typeof body is 'object'
 						response = body
-					defer.resolve response
+					defer.resolve response.data
 					return
 				else if r.statusCode == 501
 					defer.reject new Error(body)

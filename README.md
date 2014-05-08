@@ -208,12 +208,18 @@ OAuth.initialize('your_app_key');
 
 The public key is available on your [Key manager on oauth.io][2].
 
+**Getting the state token**
+
+//complete the doc here
+
 **Using the front-end SDK for authentication**
 
 The front-end SDK lets you use a popup method for authentication :
 
 ```JavaScript
-OAuth.popup('facebook')
+OAuth.popup('facebook', {
+        state: thestate
+    })
     .done(function (r) {
         //r.code is to be sent to your backend's authentication endpoint :
         $.ajax({
@@ -434,6 +440,9 @@ You are welcome to fork this SDK and to make pull requests on Github. We'll revi
 The SDK is written in Coffee Script, and uses Grunt To compile it, just run :
 
 ```sh
+sdk/folder$ git clone therepo; cd therepo
+sdk/folder$ npm install -g grunt-cli
+sdk/folder$ npm install
 sdk/folder$ grunt
 ```
 

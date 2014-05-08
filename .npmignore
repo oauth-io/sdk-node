@@ -1,0 +1,5 @@
+coffee/*
+coverage/*
+.gitignore
+Gruntfile.js
+tests
