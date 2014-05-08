@@ -210,15 +210,33 @@ The public key is available on your [Key manager on oauth.io][2].
 
 **Getting the state token**
 
-//complete the doc here
+Now what you need to do first is to call the state token endpoint to get a token to communicate with oauth.io.
+
+I'll assume you're using jQuery to perform the ajax calls.
+
+```javascript
+var state = '';
+$.ajax({
+    url: '/oauth/state_token',
+    method: 'GET',
+    success: function (data, status) {
+        state = data.token;
+    }
+});
+```
 
 **Using the front-end SDK for authentication**
+Once you've retrieved the state token and stored it in the `state` variable, you can perform the authentication.
+
+What happens here is that we're going to call OAuth.io for a provider (which must be already configured on the [key-manager](https://oauth.io/key-manager), in the initialized app, with the *server-side* option flow selected).
+
+OAuth.io will answer with a code that we're going to give to our backend through our `/api/signin` endpoint we created earlier. That endpoint will perform the authentication and retrieve the access_token from the provider, thanks to that code.
 
 The front-end SDK lets you use a popup method for authentication :
 
 ```JavaScript
 OAuth.popup('facebook', {
-        state: thestate
+        state: state // the previously retrieved state token (see above)
     })
     .done(function (r) {
         //r.code is to be sent to your backend's authentication endpoint :
@@ -230,6 +248,8 @@ OAuth.popup('facebook', {
         })
             .done(function (data, status) {
                 //Your user is authenticated here !
+                //You can now call other endpoints that use the requests
+                //to retrieve data from the provider.
             })
             .fail(function (error) {
                 //handle the error
@@ -241,8 +261,10 @@ OAuth.popup('facebook', {
 ```
 
 
-Detailed doc
-------------
+Detailed documentation
+----------------------
+
+This part lists and describes all the available methods in this SDK.
 
 **OAuth object**
 
