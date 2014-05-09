@@ -43,6 +43,10 @@ You just need to configure the provider OAuth.io as a server-side OAuth flow, in
 
 **1. Configuring the provider on oauth.io**
 
+The first thing you need to do is to create an account (if you don't have one yet) on [oauth.io](https://oauth.io), create an app in the [key-manager](https://oauth.io/key-manager) and add a provider to that app.
+
+You'll have to go on the provider's website to register a new app, and copy its keys on oauth.io.
+
 **2. Using the Nodejs SDK**
 
 Here I'll assume you're using Expressjs or Restify to create web-services
