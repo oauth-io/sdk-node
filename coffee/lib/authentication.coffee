@@ -13,7 +13,15 @@ module.exports = (cache, requestio) ->
 					secret: cache.secret_key
 				}
 			}, (e, r, body) ->
-				response = JSON.parse body
+				if e
+					defer.reject e
+					return
+
+				try
+					response = JSON.parse body
+				catch e
+					defer.reject new Error 'OAuth.io response could not be parsed'
+					return
 
 				if (not response.state?)
 					defer.reject new Error 'State is missing from response'
