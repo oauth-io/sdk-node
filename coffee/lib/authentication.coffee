@@ -40,6 +40,8 @@ module.exports = (cache, requestio) ->
 					return requestio.make_request(response, 'PUT', url, options)
 				response.del = (url, options) ->
 					return requestio.make_request(response, 'DELETE', url, options)
+				response.me = (options) ->
+					return requestio.make_me_request(response, options)
 				if (req?.session?)
 					req.session.oauth = req.session.oauth || {}
 					req.session.oauth[response.provider] = response
