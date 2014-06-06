@@ -40,20 +40,22 @@ module.exports = ->
 			return cache.public_key
 		getAppSecret: ->
 			return cache.secret_key
-		getCsrfTokens: (req) ->
-			return req.session.csrf_tokens
+		getCsrfTokens: (session) ->
+			return session.csrf_tokens
 		setOAuthdUrl: (url) ->
 			cache.oauthd_url = url
 		getOAuthdUrl: ->
 			return cache.oauthd_url
 		getVersion: ->
 			package_info.version
-		generateStateToken: (req) ->
-			csrf_generator(req)
+		generateStateToken: (session) ->
+			csrf_generator(session)
 		initEndpoints: (app) ->
 			endpoints_initializer app
-		auth: (code, req) ->
+		auth2: (code, req) ->
 			authentication.authenticate code, req
+		auth: (provider, session, opts) ->
+			authentication.auth provider, session, opts
 		create: (req, provider_name) ->
 			response = req?.session?.oauth?[provider_name]
 			if not response?
