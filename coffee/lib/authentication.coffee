@@ -11,26 +11,22 @@ module.exports = (cache, requestio) ->
 			return defer.promise
 		auth: (provider, session, opts) ->
 			defer = Q.defer()
-			console.log 'OPTS', opts
+
 			if opts?.code
-				console.log 'Calling Authenticate'
 				return a.authenticate(opts.code, session)
 
 			if opts?.credentials
-				console.log 'Rebuilding from credentials'
 				a.refresh_tokens(opts.credentials, opts?.force_refresh)
 					.then (credentials) ->
 						defer.resolve(a.construct_request_object(credentials))
 				return defer.promise
-
-			if not opts?.credentials and not opts?.code
-				console.log 'Getting from session'
+			if (not opts?.credentials) and (not opts?.code)
 				if session.oauth[provider]
 					a.refresh_tokens(session.oauth[provider], opts?.force_refresh)
 						.then (credentials) ->
 							defer.resolve(a.construct_request_object(credentials))
 				else
-					defer.reject new Error('Could not authenticate from session')
+					defer.reject new Error('Cannot authenticate from session for provider \'' + provider + '\'')
 				return defer.promise
 
 			defer.reject new Error('Could not authenticate, parameters are missing or wrong')

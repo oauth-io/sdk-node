@@ -6,7 +6,7 @@ describe('OAuth requests', function() {
 		values = require('../init_tests')();
 		values.OAuth.initialize('somekey', 'somesecret');
 
-		values.OAuth.generateStateToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req.session);
 
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
@@ -22,7 +22,9 @@ describe('OAuth requests', function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.auth('somecode', values.express_app.req)
+		values.OAuth.auth('facebook', values.express_app.req.session, {
+			code: 'somecode'
+		})
 			.then(function(result) {
 				expect(result.access_token).toBe('result_access_token');
 				done();
@@ -33,34 +35,37 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create() should exist', function(done) {
-		expect(typeof values.OAuth.create).toBe('function');
-		done();
-	});
-
-	it('OAuth.create() should return an object with the provider info + the methods get,post, patch, put and delete', function(done) {
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook')).toBe('object');
-		expect(values.OAuth.create(values.express_app.req, 'facebook').access_token).toBe('result_access_token');
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').get).toBe('function');
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').post).toBe('function');
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').patch).toBe('function');
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').put).toBe('function');
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').del).toBe('function');
-		expect(typeof values.OAuth.create(values.express_app.req, 'facebook').me).toBe('function');
-		done();
-	});
-
-	it('OAuth.create().get|patch|post|put|del|me() should fail with "Not authenticated for provider \'provider\'" if not authenticated', function(done) {
-		values.express_app.req.session.oauth['facebook'] = undefined;
-		values.OAuth.create(values.express_app.req, 'facebook')
-			.get('/me')
-			.fail(function(e) {
-				expect(e.message).toBe('Not authenticated for provider \'facebook\'');
+	it('OAuth.auth() should callback with a request_object containing the provider info + the methods get, post, patch, put, del, me, wasRefreshed and getCredentials', function(done) {
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				expect(typeof request_object).toBe('object');
+				expect(request_object.access_token).toBe('result_access_token');
+				expect(typeof request_object.get).toBe('function');
+				expect(typeof request_object.post).toBe('function');
+				expect(typeof request_object.patch).toBe('function');
+				expect(typeof request_object.put).toBe('function');
+				expect(typeof request_object.del).toBe('function');
+				expect(typeof request_object.me).toBe('function');
+				expect(typeof request_object.wasRefreshed).toBe('function');
+				expect(typeof request_object.getCredentials).toBe('function');
 				done();
 			});
 	});
 
-	it('OAuth.create().get() should call oauth.io to make a GET request to an API endpoint', function(done) {
+	it('OAuth.auth() with session only should fail with "Not authenticated for provider \'provider\'" if not authenticated', function(done) {
+		values.express_app.req.session.oauth['facebook'] = undefined;
+
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.get('/me');
+			})
+			.fail(function(e) {
+				expect(e.message).toBe('Cannot authenticate from session for provider \'facebook\'');
+				done();
+			});
+	});
+
+	it('request_object.get() should call oauth.io to make a GET request to an API endpoint', function(done) {
 		var url = '/me';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -75,7 +80,10 @@ describe('OAuth requests', function() {
 			.reply(200, {
 				'name': 'User Name'
 			});
-		values.OAuth.create(values.express_app.req, 'facebook').get('/me')
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.get('/me');
+			})
 			.then(function(r) {
 				expect(r.name).toBe('User Name');
 				done();
@@ -86,7 +94,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create().post() should call oauth.io to make a POST request to an API endpoint', function(done) {
+	it('request_object.post() should call oauth.io to make a POST request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -103,9 +111,12 @@ describe('OAuth requests', function() {
 			.reply(200, {
 				'id': 'SOMEID'
 			});
-		values.OAuth.create(values.express_app.req, 'facebook').post('/me/feed', {
-			message: "Hello World"
-		})
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.post('/me/feed', {
+					message: "Hello World"
+				});
+			})
 			.then(function(r) {
 				expect(r.id).toBe('SOMEID');
 				done();
@@ -116,7 +127,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create().put() should call oauth.io to make a PUT request to an API endpoint', function(done) {
+	it('request_object.put() should call oauth.io to make a PUT request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -133,9 +144,12 @@ describe('OAuth requests', function() {
 			.reply(200, {
 				'id': 'SOMEID'
 			});
-		values.OAuth.create(values.express_app.req, 'facebook').put('/me/feed', {
-			message: "Hello World"
-		})
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.put('/me/feed', {
+					message: "Hello World"
+				});
+			})
 			.then(function(r) {
 				expect(r.id).toBe('SOMEID');
 				done();
@@ -146,7 +160,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create().patch() should call oauth.io to make a PATCH request to an API endpoint', function(done) {
+	it('request_object.patch() should call oauth.io to make a PATCH request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -164,9 +178,12 @@ describe('OAuth requests', function() {
 				'id': 'SOMEID'
 			});
 
-		values.OAuth.create(values.express_app.req, 'facebook').patch('/me/feed', {
-			message: "Hello World"
-		})
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.patch('/me/feed', {
+					message: "Hello World"
+				})
+			})
 			.then(function(r) {
 				expect(r.id).toBe('SOMEID');
 				done();
@@ -177,7 +194,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create().del() should call oauth.io to make a DELETE request to an API endpoint', function(done) {
+	it('request_object.del() should call oauth.io to make a DELETE request to an API endpoint', function(done) {
 		var url = '/me/feed';
 		url = encodeURIComponent(url);
 		if (url[0] !== '/')
@@ -195,9 +212,12 @@ describe('OAuth requests', function() {
 				'id': 'SOMEID'
 			});
 
-		values.OAuth.create(values.express_app.req, 'facebook').del('/me/feed', {
-			message: "Hello World"
-		})
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.del('/me/feed', {
+					message: "Hello World"
+				});
+			})
 			.then(function(r) {
 				expect(r.id).toBe('SOMEID');
 				done();
@@ -208,7 +228,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create().me() should call a GET on oauthd/auth/me to get user info', function (done) {
+	it('request_object.me() should call a GET on oauthd/auth/me to get user info', function(done) {
 		var url = '/auth/facebook/me';
 		url = encodeURIComponent(url);
 		var scope = nock('https://oauth.io')
@@ -223,18 +243,21 @@ describe('OAuth requests', function() {
 				}
 			});
 
-		values.OAuth.create(values.express_app.req, 'facebook').me()
-		.then(function (r) {
-			expect(r.firstname).toBe('Archibald');
-			done();
-		})
-		.fail(function (e) {
-			expect(e).not.toBeDefined();
-			done();
-		});
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.me();
+			})
+			.then(function(r) {
+				expect(r.firstname).toBe('Archibald');
+				done();
+			})
+			.fail(function(e) {
+				expect(e).not.toBeDefined();
+				done();
+			});
 	});
 
-	it('OAuth.create().me(filter) should call a GET on oauthd/auth/me?filter to get user info', function(done) {
+	it('request_object.me(filter) should call a GET on oauthd/auth/me?filter to get user info', function(done) {
 
 		var url = '/auth/facebook/me?' + qs.stringify({
 			filter: 'firstname,lastname'
@@ -252,7 +275,11 @@ describe('OAuth requests', function() {
 				}
 			});
 
-		values.OAuth.create(values.express_app.req, 'facebook').me(['firstname', 'lastname'])
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.me(['firstname', 'lastname']);
+
+			})
 			.then(function(r) {
 				expect(r.firstname).toBe('Archibald');
 				expect(r.lastname).toBe('De la Testitude');
@@ -264,7 +291,7 @@ describe('OAuth requests', function() {
 			});
 	});
 
-	it('OAuth.create().me() should be able to handle an 501 error when a provider\'s me is not implemented', function (done) {
+	it('request_object.me() should be able to handle an 501 error when a provider\'s me is not implemented', function(done) {
 		var url = '/auth/facebook/me';
 		url = encodeURIComponent(url);
 		var scope = nock('https://oauth.io')
@@ -275,18 +302,21 @@ describe('OAuth requests', function() {
 			.get('/auth/facebook/me')
 			.reply(501, 'Returned provider name does not match asked provider');
 
-		values.OAuth.create(values.express_app.req, 'facebook').me()
-		.then(function (r) {
-			expect(r).not.toBeDefined();
-			done();
-		})
-		.fail(function (e) {
-			expect(e.message).toBe('Returned provider name does not match asked provider');
-			done();
-		});
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.me();
+			})
+			.then(function(r) {
+				expect(r).not.toBeDefined();
+				done();
+			})
+			.fail(function(e) {
+				expect(e.message).toBe('Returned provider name does not match asked provider');
+				done();
+			});
 	});
 
-	it('OAuth.create().me() should be able to handle any other error with a standard message', function (done) {
+	it('request_object.me() should be able to handle any other error with a standard message', function(done) {
 		var url = '/auth/facebook/me';
 		url = encodeURIComponent(url);
 		var scope = nock('https://oauth.io')
@@ -297,15 +327,18 @@ describe('OAuth requests', function() {
 			.get('/auth/facebook/me')
 			.reply(500, 'Returned provider name does not match asked provider');
 
-		values.OAuth.create(values.express_app.req, 'facebook').me()
-		.then(function (r) {
-			expect(r).not.toBeDefined();
-			done();
-		})
-		.fail(function (e) {
-			expect(e.message).toBe('An error occured while retrieving the user\'s information');
-			done();
-		});
+		values.OAuth.auth('facebook', values.express_app.req.session)
+			.then(function(request_object) {
+				return request_object.me();
+			})
+			.then(function(r) {
+				expect(r).not.toBeDefined();
+				done();
+			})
+			.fail(function(e) {
+				expect(e.message).toBe('An error occured while retrieving the user\'s information');
+				done();
+			});
 	});
 
 });

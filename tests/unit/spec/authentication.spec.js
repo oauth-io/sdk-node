@@ -9,7 +9,7 @@ describe("OAuth authentication", function() {
 
 	it("should be able to send the code to an oauthd instance in exchange for an access token", function(done) {
 		values.OAuth.initialize('somekey', 'somesecret');
-		values.OAuth.generateStateToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req.session);
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
 				code: 'somecode',
@@ -24,12 +24,15 @@ describe("OAuth authentication", function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.auth('somecode', values.express_app.req)
+		values.OAuth.auth('facebook', values.express_app.req.session, {
+			code: 'somecode'
+		})
 		.then(function(result) {
 			expect(result.access_token).toBe('result_access_token');
 			done();
 		})
 		.fail(function(error) {
+			console.log(error);
 			expect(error).not.toBeDefined();
 			done();
 		});
@@ -37,7 +40,7 @@ describe("OAuth authentication", function() {
 
 	it("should throw 'State is missing from response' when state is not returned", function(done) {
 		values.OAuth.initialize('somekey', 'somesecret');
-		values.OAuth.generateStateToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req.session);
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
 				code: 'somecode',
@@ -51,7 +54,9 @@ describe("OAuth authentication", function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.auth('somecode', values.express_app.req)
+		values.OAuth.auth('facebook', values.express_app.req.session, {
+			code: 'somecode'
+		})
 		.then(function(result) {
 			expect(result).not.toBeDefined();
 			done();
@@ -65,7 +70,7 @@ describe("OAuth authentication", function() {
 
 	it("should throw 'State is not matching' when state from response is not matching a state in cache", function(done) {
 		values.OAuth.initialize('somekey', 'somesecret');
-		values.OAuth.generateStateToken(values.express_app.req);
+		values.OAuth.generateStateToken(values.express_app.req.session);
 		var scope = nock('https://oauth.io')
 			.post('/auth/access_token', {
 				code: 'somecode',
@@ -80,7 +85,9 @@ describe("OAuth authentication", function() {
 				provider: 'facebook'
 			});
 
-		values.OAuth.auth('somecode', values.express_app.req)
+		values.OAuth.auth('facebook', values.express_app.req.session, {
+			code: 'somecode'
+		})
 		.then(function(result) {
 			expect(result).not.toBeDefined();
 			done();
