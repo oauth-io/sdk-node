@@ -218,7 +218,9 @@ describe('OAuth requests', function() {
 			}))
 			.get('/auth/facebook/me')
 			.reply(200, {
-				'firstname': 'Archibald'
+				data: {
+					'firstname': 'Archibald'
+				}
 			});
 
 		values.OAuth.create(values.express_app.req, 'facebook').me()
@@ -244,8 +246,10 @@ describe('OAuth requests', function() {
 			}))
 			.get(url)
 			.reply(200, {
-				'firstname': 'Archibald',
-				'lastname': 'De la Testitude',
+				data: {
+					'firstname': 'Archibald',
+					'lastname': 'De la Testitude'
+				}
 			});
 
 		values.OAuth.create(values.express_app.req, 'facebook').me(['firstname', 'lastname'])
