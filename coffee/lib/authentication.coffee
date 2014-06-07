@@ -3,11 +3,44 @@ Q = require 'q'
 
 module.exports = (cache, requestio) ->
 	a = {
-		refresh_tokens: (credentials, force) ->
+		refresh_tokens: (credentials, session, force) ->
 			defer = Q.defer()
-			# call refresher here
-			defer.resolve credentials
-			# set credentials.refreshed to true if refreshed
+			credentials.refreshed = false
+			now = new Date()
+			if credentials.refresh_token and ((credentials.expires and now.getTime() > credentials.expires) or force)
+				request.post {
+					url: cache.oauthd_url +  '/auth/refresh_token/' + credentials.provider,
+					form: {
+						token: credentials.refresh_token,
+						key: cache.public_key,
+						secret: cache.secret_key
+					}
+				}, (e, r, body) ->
+					if (e) 
+						defer.reject e
+						return defer.promise
+					else
+						if typeof body is "string"
+							try
+								body = JSON.parse body
+							catch e
+								defer.reject e
+							console.log 'BODY', body
+							if typeof body == "object" and body.access_token and body.expires_in
+								credentials.expires = new Date().getTime() + body.expires_in * 1000
+								for k of body
+									credentials[k] = body[k]
+								console.log 'NEW CREDS', credentials
+								if (session?)
+									session.oauth = session.oauth || {}
+									session.oauth[credentials.provider] = credentials
+								credentials.refreshed = true
+								credentials.last_refresh = new Date().getTime()
+								defer.resolve credentials	
+							else
+								defer.resolve credentials
+			else
+				defer.resolve credentials
 			return defer.promise
 		auth: (provider, session, opts) ->
 			defer = Q.defer()
@@ -16,13 +49,13 @@ module.exports = (cache, requestio) ->
 				return a.authenticate(opts.code, session)
 
 			if opts?.credentials
-				a.refresh_tokens(opts.credentials, opts?.force_refresh)
+				a.refresh_tokens(opts.credentials, session, opts?.force_refresh)
 					.then (credentials) ->
 						defer.resolve(a.construct_request_object(credentials))
 				return defer.promise
 			if (not opts?.credentials) and (not opts?.code)
 				if session.oauth[provider]
-					a.refresh_tokens(session.oauth[provider], opts?.force_refresh)
+					a.refresh_tokens(session.oauth[provider], session, opts?.force_refresh)
 						.then (credentials) ->
 							defer.resolve(a.construct_request_object(credentials))
 				else
@@ -77,7 +110,8 @@ module.exports = (cache, requestio) ->
 					return
 				if (not session?.csrf_tokens? or response.state not in session.csrf_tokens)
 					defer.reject new Error 'State is not matching'
-
+				if response.expires_in
+					response.expires = new Date().getTime() + response.expires_in * 1000
 				response = a.construct_request_object response
 				if (session?)
 					session.oauth = session.oauth || {}
