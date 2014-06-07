@@ -56,6 +56,8 @@ module.exports = ->
 			authentication.authenticate code, req
 		auth: (provider, session, opts) ->
 			authentication.auth provider, session, opts
+		refreshCredentials: (credentials, session) ->
+			return authentication.refresh_tokens credentials, session, true
 		create: (req, provider_name) ->
 			response = req?.session?.oauth?[provider_name]
 			if not response?
