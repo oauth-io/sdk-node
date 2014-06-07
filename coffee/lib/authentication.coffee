@@ -25,12 +25,10 @@ module.exports = (cache, requestio) ->
 								body = JSON.parse body
 							catch e
 								defer.reject e
-							console.log 'BODY', body
 							if typeof body == "object" and body.access_token and body.expires_in
 								credentials.expires = new Date().getTime() + body.expires_in * 1000
 								for k of body
 									credentials[k] = body[k]
-								console.log 'NEW CREDS', credentials
 								if (session?)
 									session.oauth = session.oauth || {}
 									session.oauth[credentials.provider] = credentials
