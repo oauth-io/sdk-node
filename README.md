@@ -107,7 +107,7 @@ Let's say your endpoint will be on /oauth/state_token :
 
 ```JavaScript
 app.get('/oauth/state_token', function (req, res) {
-    var token = OAuth.generateStateToken(req);
+    var token = OAuth.generateStateToken(req.session);
     
     res.send(200, {
         token:token
@@ -115,7 +115,34 @@ app.get('/oauth/state_token', function (req, res) {
 });
 ```
 
-**Creating an authentication endpoint**
+**Authentication**
+
+The SDK gives you an `auth` method that allows you to retrieve a `request_object`. That `request_object` allows you to make API calls, and contains the access token.
+
+The `auth` method takes :
+
+1. a provider name
+2. the session array
+3. (optional) an options object
+
+It returns a promise to let you handle the callback and error management.
+
+```
+OAuth.auth('provider', req.session, {
+    option_field: option_value,
+    //...
+});
+```
+
+The options object can contain the following fields :
+
+- code: an OAuth code, that will be used to get credentials from the provider and build a request_object
+- credentials: a credentials object, that will be used to rebuild a refreshed request_object
+- force_refresh: forces the credentials refresh if a refresh token is available
+
+If nothing is given in the options object, the auth method tries to build a request_object from the session.
+
+*Authenticating the user for the first time*
 
 When you launch the authentication flow from the front-end (that is to say when you show a popup to the user so that he can allow your app to use his/her data), you'll be given a code (see next section, "Integrating the front-end SDK" to learn how to get the code).
 
@@ -125,26 +152,29 @@ To do that, you have to create an authentication endpoint on your backend. This 
 
 ```JavaScript
 app.post('/api/signin', function (req, res) {
-    OAuth.auth(JSON.parse(req.body).code, req)
-    .then(function (result) {
-        //result contains the access_token if OAuth 2.0
-        //or the couple oauth_token,oauth_token_secret if OAuth 1.0
+    var code = JSON.parse(req.body).code;
+
+    // Here the auth method takes the field 'code'
+    // in its options object. It will thus use that code
+    // to retrieve credentials from the provider.
+    OAuth.auth('facebook', req.session, {
+        code: code
+    })
+    .then(function (request_object) {
+        // request_object contains the access_token if OAuth 2.0
+        // or the couple oauth_token,oauth_token_secret if OAuth 1.0
         
-        //result also contains methods get|post|patch|put|delete|me
-        result.get('/me')
-            .then(function (info) {
-                var user = {
-                    email: info.email,
-                    firstname: info.first_name,
-                    lastname: info.last_name
-                };
-                //login your user here.
-                res.send(200, 'Successfully logged in');
-            })
-            .fail(function (e) {
-                //handle errors here
-                res.send(500, 'An error occured');
-            });
+        // request_object also contains methods get|post|patch|put|delete|me
+        return request_object.get('/me');
+    })
+    .then(function (info) {
+        var user = {
+            email: info.email,
+            firstname: info.first_name,
+            lastname: info.last_name
+        };
+        //login your user here.
+        res.send(200, 'Successfully logged in');
     })
     .fail(function (e) {
         //handle errors here
@@ -153,9 +183,9 @@ app.post('/api/signin', function (req, res) {
 });
 ```
 
-**Use the authentication info in other endpoints**
+*Authenticating a user from the session*
 
-Once a user is authenticaded on a service, the auth result object is stored
+Once a user is authenticaded on a service, the credentials are stored
 in the session. You can access it very easily from any other endpoint to use it. Let's say for example that you want to post something on your user's wall on Facebook :
 
 ```JavaScript
@@ -163,9 +193,11 @@ app.post('/api/wall_message', function (req, res){
     var data = JSON.parse(req.body);
     //data contains field "message", containing the message to post
     
-    OAuth.create(req, 'facebook')
-        .post('/me/feed', {
-            message: data.message
+    OAuth.auth('facebook', req.session)
+        .then(function (request_object) {
+            return request_object.post('/me/feed', {
+                message: data.message
+            });
         })
         .then(function (r) {
             //r contains Facebook's response, normaly an id
@@ -178,6 +210,66 @@ app.post('/api/wall_message', function (req, res){
             res.send(400, 'An error occured while posting the message');
         });
 });
+```
+
+*Authenticating a user from saved credentials*
+
+* Saving credentials
+If you want to save the credentials to use them when the user is offline, (e.g. in a cron loading information), you can save the credentials in the data storage of your choice. All you need to do is to retrieve the credentials object from the request_object : 
+
+```javascript
+OAuth.auth('provider', req.session, {
+    code: code
+})
+    .then(function (request_object) {
+        var credentials = request_object->getCredentials();
+
+        // Here you can save the credentials object wherever you want
+
+    });
+```
+
+* Using saved credentials
+
+You can then rebuild a request_object from the credentials you saved earlier :
+```javascript
+// Here you retrieved the credentials object from your data storage
+
+OAuth.auth('provider', req.session, {
+    credentials: credentials
+})
+    .then(function (request_object) {
+        // Here request_object has been rebuilt from the credentials object
+        // If the credentials are expired and contain a refresh token,
+        // the auth method automatically refresh them.
+    });
+
+```
+
+*Refreshing saved credentials*
+
+Tokens are automatically refreshed when you use the `auth` method with the session or with saved credentials. The SDK checks that the access token is expired whenever it's called.
+
+If it is, and if a refresh token is available in the credentials (you may have to configure the OAuth.io app in a specific way for some providers), it automatically calls the OAuth.io refresh token endpoint.
+
+If you want to force a refresh from the `auth` method, you can pass the `force_refresh` field in the option object, like this :
+
+```javascript
+OAuth.auth('provider', req.session, {
+    force_refresh: true
+});
+```
+
+You can also refresh a credentials object manually. To do that, call the OAuth.refreshCredentials on the request_object or on a credentials object :
+
+```javascript
+OAuth.refreshCredentials(request_object, req.session)
+    .then(function (request_object) {
+        // Here request_object has been refreshed
+    })
+    .fail(function (e) {
+        // Handle an error
+    });
 ```
 
 **3. Integrating Front-end SDK**
