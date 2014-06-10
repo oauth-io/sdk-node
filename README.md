@@ -10,6 +10,7 @@ Features
 - Server-side OAuth authentication flow
 - Requests to API from the backend, including the unified "me" method
 - Unified user information requests for available providers from the backend
+- Access token renewal with the refresh_token when available
 
 With this SDK, your OAuth flow is also more secure as the oauth token never
 leaves your backend.
