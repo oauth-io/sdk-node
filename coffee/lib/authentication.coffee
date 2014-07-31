@@ -9,7 +9,7 @@ module.exports = (cache, requestio) ->
 			now = new Date()
 			if credentials.refresh_token and ((credentials.expires and now.getTime() > credentials.expires) or force)
 				request.post {
-					url: cache.oauthd_url +  '/auth/refresh_token/' + credentials.provider,
+					url: cache.oauthd_url + cache.oauthd_base +  '/refresh_token/' + credentials.provider,
 					form: {
 						token: credentials.refresh_token,
 						key: cache.public_key,
@@ -86,7 +86,7 @@ module.exports = (cache, requestio) ->
 		authenticate: (code, session) -> 
 			defer = Q.defer()
 			request.post {
-				url: cache.oauthd_url + '/auth/access_token',
+				url: cache.oauthd_url + cache.oauthd_base + '/access_token',
 				form: {
 					code: code,
 					key: cache.public_key,
@@ -103,6 +103,8 @@ module.exports = (cache, requestio) ->
 					defer.reject new Error 'OAuth.io response could not be parsed'
 					return
 
+				if (response.status? and response.status == 'error' and response.message?)
+					defer.reject new Error 'OAuth.io / oauthd responded with : ' + response.message
 				if (not response.state?)
 					defer.reject new Error 'State is missing from response'
 					return
