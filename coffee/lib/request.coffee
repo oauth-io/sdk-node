@@ -31,6 +31,7 @@ module.exports = (cache) ->
 			url = encodeURIComponent url
 			url = "/" + url unless url[0] is "/"
 			url = cache.oauthd_url + "/request/" + r.provider + url
+
 			get_options = undefined
 			if (method == 'GET')
 				get_options = options
@@ -94,8 +95,10 @@ module.exports = (cache) ->
 				body = {
 					filter: opts.join(',')
 				}
-			url = "/auth/" + r.provider + '/me'
-			url = cache.oauthd_url + url
+			url = r.provider + '/me'
+			url = cache.oauthd_url + '/auth/' + url
+
+
 			options = {
 				method: "GET",
 				url: url,
