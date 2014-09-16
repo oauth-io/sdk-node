@@ -17,9 +17,9 @@ module.exports = ->
 	guid = _guid()
 	csrf_generator = _csrf_generator(guid)
 	requestio = _requestio(cache)
-	authentication = _authentication(cache, requestio)
+	authentication = _authentication(csrf_generator, cache, requestio)
 	endpoints_initializer = _endpoints_initializer(csrf_generator, cache, authentication)
-	
+
 	oauth =  {
 		initialize: (app_public_key, app_secret_key) ->
 			cache.public_key = app_public_key
@@ -56,9 +56,27 @@ module.exports = ->
 		initEndpoints: (app) ->
 			endpoints_initializer app
 		auth: (provider, session, opts) ->
-			authentication.auth provider, session, opts
+			if typeof opts == 'undefined' and typeof session == 'string'
+				oauth.authRedirect provider, session
+			else
+				authentication.auth provider, session, opts
+
+		redirect: (cb) ->
+			return (req, res) ->
+				authentication.authenticate((JSON.parse req.query.oauthio).data.code, req.session)
+					.then((r) ->
+						cb r, req, res
+					)
+					.fail((e) ->
+						cb e, req, res
+					)
+
+		authRedirect: (provider, urlToRedirect) ->
+			return (req, res) ->
+				console.log 'in request'
+				authentication.redirect provider, urlToRedirect, req, res
+
 		refreshCredentials: (credentials, session) ->
 			return authentication.refresh_tokens credentials, session, true
 	}
 	return oauth;
-	

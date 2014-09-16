@@ -15,69 +15,13 @@ Features
 With this SDK, your OAuth flow is also more secure as the oauth token never
 leaves your backend.
 
-Common use-case
----------------
-You don't want to use APIs directly from the front-end, but rather through web-services inside your Node.js backend.
-
-
-
-The server-side flow
---------------------
-
-In the server-side OAuth authentication flow, the oauth token never leaves your backend.
-
-To authenticate a user, the flow follows these steps :
-
-- Ask for a state token to the backend. This token will be used to communicate with oauth.io
-- Show a popup or redirect your user to request his permission to use his/her account on the requested provider
-- The latter gives you a code, that you give to your backend
-- The backend sends the code to oauth.io with other information like the oauth.io app's public key and secret.
-- oauth.io responds with the access_token, that you can then store on your backend as long as it's valid.
-- You can then make requests to the API using that access token, directly from your backend.
-
-Getting Started Tutorial
--------------------
-
-**Installation**
-
-You just need to configure the provider OAuth.io as a server-side OAuth flow, install the front-end SDK to help you handle the popup/redirect, and install this SDK on your server.
-
-**1. Configuring the provider on oauth.io**
-
-The first thing you need to do is to create an account (if you don't have one yet) on [oauth.io](https://oauth.io), create an app in the [key-manager](https://oauth.io/key-manager) and add a provider to that app.
-
-You'll have to go on the provider's website to register a new app, and copy its keys on oauth.io.
-
-**2. Using the Nodejs SDK**
-
-Here I'll assume you're using Expressjs or Restify to create web-services
-on your server. You need a per user session system, and both provide one that
-respect approximately the same interface.
-
-They store their session in the req object, which is passed as an argument to
-every endpoint callback, like the following :
-
-```JavaScript
-var app = express();
-
-//Here's an endpoint that says hello
-app.get('/my/endpoint', function (req, res) {
-    
-    //Here you can use the session :
-    req.session.firstname = req.body.firstname || req.session.firstname;
-    
-    res.send(200, 'Hello, ' + req.session.firstname + ' !');
-});
-
-app.listen(process.env.MY_APP_PORT || 3000);
-```
-
-**Installation**
+Installation
+------------
 
 To install the SDK, run the following command in the folder of your Nodejs app :
 
 ```bash
-myapp/folder$ npm install oauthio
+myapp/folder$ npm install oauthio --save
 ```
 
 Whenever you need to use the SDK, you can require it from one of your modules like this :
@@ -86,11 +30,14 @@ Whenever you need to use the SDK, you can require it from one of your modules li
 var OAuth = require('oauthio');
 ```
 
-**Initializing the SDK**
+To use this SDK, you need to create an account (if you don't have one yet) on [oauth.io](https://oauth.io), create an app in the [Dashboard](https://oauth.io/dashboard) and add a provider to that app.
 
-The first thing you need to do is to initialize the SDK with your OAuth.io's app's key and secret.
+You'll have to go on the provider's website to register a new app, and copy its keys on oauth.io. **Don't forget to select the Node.js backend on OAuth.io.**
 
-You can get these pieces of information from the [Key-manager][2] in oauth.io.
+Initializing the SDK
+--------------------
+
+Initialize the SDK with your OAuth.io's app's key and secret. You can get these pieces of information from the [Dashboard][2] in oauth.io.
 
 You can call the initialize method right after you initialized your express/restify app and included your middlewares :
 
@@ -98,25 +45,50 @@ You can call the initialize method right after you initialized your express/rest
 OAuth.initialize('your_app_key', 'your_app_secret');
 ```
 
-**Publishing an endpoint to give state tokens**
+Basic usage
+-----------
 
-You need to create an endpoint on your server so that the front-end can get a state token that will be stored server side, and used to communicate with oauth.io.
+To authorize your user to one of the 100+ provider of OAuth.io, you need to define 2 endpoints.
 
-Every time you'll call this endpoint, a new token will be generated and stored.
-
-Let's say your endpoint will be on /oauth/state_token :
+The first endpoint is used to redirect your user on the authorization page of the chosen provider. The second one is used as a callback when your user is authorized or when your user canceled the demand of authorization.
 
 ```JavaScript
-app.get('/oauth/state_token', function (req, res) {
-    var token = OAuth.generateStateToken(req.session);
-    
-    res.send(200, {
-        token:token
-    });
-});
+app.get('/signin', oauth.auth(provider_name, url_to_redirect));
 ```
 
-**Authentication**
+* `provider_name` is the provider that your user has to connect with (e.g. `twitter`, `facebook`, `google` or 100+ others).
+
+* `url_to_redirect` is the full url of your callback endpoint (e.g. `http://your-website.com/oauth/redirect`)
+
+Once your user has authorized or canceled the authorization, he is redirected on the `url_to_redirect`, you can define this endpoint like this:
+
+```Javascript
+app.get('/oauth/redirect', oauth.redirect(function(result, req, res) {
+    //todo with result
+}));
+```
+
+Then, you can use `result` to make API call to the provider easily using `get()`, `post()`, `put()`, `patch()`, `del()` or `me()` method.
+
+Take a look to this complete example using twitter API
+
+```Javascript
+app.get('/signin', oauth.auth('twitter', 'http://localhost:8080/oauth/redirect'));
+
+app.get('/oauth/redirect', oauth.redirect(function(result, req, res) {
+    if (result instanceof Error) {
+        res.send(500, "error: " + result.message);
+    }
+    result.me().done(function(me) {
+        console.log(me);
+        res.send(200, JSON.stringify(me));
+    });
+}));
+
+```
+
+Auth method
+-----------
 
 The SDK gives you an `auth` method that allows you to retrieve a `request_object`. That `request_object` allows you to make API calls, and contains the access token.
 
@@ -143,7 +115,7 @@ The options object can contain the following fields :
 
 If nothing is given in the options object, the auth method tries to build a request_object from the session.
 
-*Authenticating the user for the first time*
+**Authenticating the user from the frontend JS SDK**
 
 When you launch the authentication flow from the front-end (that is to say when you show a popup to the user so that he can allow your app to use his/her data), you'll be given a code (see next section, "Integrating the front-end SDK" to learn how to get the code).
 
@@ -184,7 +156,7 @@ app.post('/api/signin', function (req, res) {
 });
 ```
 
-*Authenticating a user from the session*
+**Authenticating a user from the session**
 
 Once a user is authenticaded on a service, the credentials are stored
 in the session. You can access it very easily from any other endpoint to use it. Let's say for example that you want to post something on your user's wall on Facebook :
@@ -213,7 +185,7 @@ app.post('/api/wall_message', function (req, res){
 });
 ```
 
-*Authenticating a user from saved credentials*
+**Authenticating a user from saved credentials**
 
 * Saving credentials
 If you want to save the credentials to use them when the user is offline, (e.g. in a cron loading information), you can save the credentials in the data storage of your choice. All you need to do is to retrieve the credentials object from the request_object : 
@@ -247,7 +219,7 @@ OAuth.auth('provider', req.session, {
 
 ```
 
-*Refreshing saved credentials*
+**Refreshing saved credentials**
 
 Tokens are automatically refreshed when you use the `auth` method with the session or with saved credentials. The SDK checks that the access token is expired whenever it's called.
 
@@ -272,91 +244,6 @@ OAuth.refreshCredentials(request_object, req.session)
         // Handle an error
     });
 ```
-
-**3. Integrating Front-end SDK**
-
-This SDK is available on our website : [Get it on oauth.io][1].
-
-To install it, place a script tag pointing to it in your html page :
-
-
-```html
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>My Website</title>
-        ...
-        <script src="path/to/oauth.js"></script>
-        ...
-    </head>
-    <body>
-    ...
-    </body>
-</html>
-```
-
-**Initializing the front-end SDK**
-
-To initialize the front-end SDK, you just need to do :
-
-```JavaScript
-OAuth.initialize('your_app_key');
-```
-
-The public key is available on your [Key manager on oauth.io][2].
-
-**Getting the state token**
-
-Now what you need to do first is to call the state token endpoint to get a token to communicate with oauth.io.
-
-I'll assume you're using jQuery to perform the ajax calls.
-
-```javascript
-var state = '';
-$.ajax({
-    url: '/oauth/state_token',
-    method: 'GET',
-    success: function (data, status) {
-        state = data.token;
-    }
-});
-```
-
-**Using the front-end SDK for authentication**
-Once you've retrieved the state token and stored it in the `state` variable, you can perform the authentication.
-
-What happens here is that we're going to call OAuth.io for a provider (which must be already configured on the [key-manager](https://oauth.io/key-manager), in the initialized app, with the *server-side* option flow selected).
-
-OAuth.io will answer with a code that we're going to give to our backend through our `/api/signin` endpoint we created earlier. That endpoint will perform the authentication and retrieve the access_token from the provider, thanks to that code.
-
-The front-end SDK lets you use a popup method for authentication :
-
-```JavaScript
-OAuth.popup('facebook', {
-        state: state // the previously retrieved state token (see above)
-    })
-    .done(function (r) {
-        //r.code is to be sent to your backend's authentication endpoint :
-        $.ajax({
-            url: '/api/signin',
-            data: {
-                code: code
-            }
-        })
-            .done(function (data, status) {
-                //Your user is authenticated here !
-                //You can now call other endpoints that use the requests
-                //to retrieve data from the provider.
-            })
-            .fail(function (error) {
-                //handle the error
-            });
-    })
-    .fail(function (e) {
-        //handle the error
-    });
-```
-
 
 Detailed documentation
 ----------------------
@@ -589,6 +476,6 @@ The SDK is released under the Apache2 license.
 Powered by [OAuth.io][3].
 
 [1]: https://oauth.io/docs
-[2]: https://oauth.io/key-manager
+[2]: https://oauth.io/dashboard
 [3]: https://oauth.io
 [4]: https://oauth.io/docs/me

@@ -1,7 +1,7 @@
 request = require 'request'
 Q = require 'q'
 
-module.exports = (cache, requestio) ->
+module.exports = (csrf_generator, cache, requestio) ->
 	a = {
 		refresh_tokens: (credentials, session, force) ->
 			defer = Q.defer()
@@ -16,7 +16,7 @@ module.exports = (cache, requestio) ->
 						secret: cache.secret_key
 					}
 				}, (e, r, body) ->
-					if (e) 
+					if (e)
 						defer.reject e
 						return defer.promise
 					else
@@ -34,14 +34,23 @@ module.exports = (cache, requestio) ->
 									session.oauth[credentials.provider] = credentials
 								credentials.refreshed = true
 								credentials.last_refresh = new Date().getTime()
-								defer.resolve credentials	
+								defer.resolve credentials
 							else
 								defer.resolve credentials
 			else
 				defer.resolve credentials
 			return defer.promise
+
+		redirect: (provider, urlToRedirect, req, res) ->
+			csrf_token = csrf_generator(req.session)
+			res.writeHead 302, Location: cache.oauthd_url + cache.oauthd_base + '/' + provider + '?k=' + cache.public_key + '&opts=' + encodeURIComponent(JSON.stringify({state: csrf_token})) + '&redirect_type=server&redirect_uri=' + encodeURIComponent(urlToRedirect)
+			res.end()
+
 		auth: (provider, session, opts) ->
 			defer = Q.defer()
+
+			if typeof session == "function"
+				return a.redirect provider, session
 
 			if opts?.code
 				return a.authenticate(opts.code, session)
@@ -62,6 +71,7 @@ module.exports = (cache, requestio) ->
 
 			defer.reject new Error('Could not authenticate, parameters are missing or wrong')
 			return defer.promise
+
 		construct_request_object: (credentials) ->
 			request_object = {}
 			for k of credentials
@@ -83,7 +93,8 @@ module.exports = (cache, requestio) ->
 			request_object.wasRefreshed = () ->
 				return credentials.refreshed
 			return request_object
-		authenticate: (code, session) -> 
+
+		authenticate: (code, session) ->
 			defer = Q.defer()
 			request.post {
 				url: cache.oauthd_url + cache.oauthd_base + '/access_token',
@@ -108,6 +119,7 @@ module.exports = (cache, requestio) ->
 				if (not response.state?)
 					defer.reject new Error 'State is missing from response'
 					return
+				console.log session.csrf_tokens, response.state
 				if (not session?.csrf_tokens? or response.state not in session.csrf_tokens)
 					defer.reject new Error 'State is not matching'
 				if response.expires_in
