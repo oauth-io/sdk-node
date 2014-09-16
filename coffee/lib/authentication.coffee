@@ -119,7 +119,6 @@ module.exports = (csrf_generator, cache, requestio) ->
 				if (not response.state?)
 					defer.reject new Error 'State is missing from response'
 					return
-				console.log session.csrf_tokens, response.state
 				if (not session?.csrf_tokens? or response.state not in session.csrf_tokens)
 					defer.reject new Error 'State is not matching'
 				if response.expires_in
