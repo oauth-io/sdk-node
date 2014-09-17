@@ -1,6 +1,6 @@
 {
   "name": "oauthio",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "OAuth that just works ! This is the Node.js SDK for OAuth.io.",
   "main": "index.js",
   "scripts": {
