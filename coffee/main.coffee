@@ -73,7 +73,6 @@ module.exports = ->
 
 		authRedirect: (provider, urlToRedirect) ->
 			return (req, res) ->
-				console.log 'in request'
 				authentication.redirect provider, urlToRedirect, req, res
 
 		refreshCredentials: (credentials, session) ->
