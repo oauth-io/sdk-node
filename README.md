@@ -78,6 +78,7 @@ app.get('/signin', oauth.auth('twitter', 'http://localhost:8080/oauth/redirect')
 app.get('/oauth/redirect', oauth.redirect(function(result, req, res) {
     if (result instanceof Error) {
         res.send(500, "error: " + result.message);
+        return;
     }
     result.me().done(function(me) {
         console.log(me);

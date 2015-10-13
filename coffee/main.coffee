@@ -65,7 +65,17 @@ module.exports = ->
 			return (req, res) ->
 				if typeof req.query != 'object'
 					return cb (new Error "req.query must be an object (did you used a query parser?)"), req, res
-				authentication.authenticate((JSON.parse req.query.oauthio).data.code, req.session)
+				if typeof req.query.oauthio == 'undefined'
+					return cb (new Error "Could not find oauthio in query string"), req, res
+				try
+					oauthio_data = JSON.parse req.query.oauthio
+				catch error
+					return cb (new Error "Could not parse oauthio results"), req, res
+				if oauthio_data.status == "error"
+					return cb (new Error (oauthio_data.message || "Authorization error")), req, res
+				if not oauthio_data.data?.code
+					return cb (new Error "Could not find code from oauthio results"), req, res
+				authentication.authenticate(oauthio_data.data.code, req.session)
 					.then((r) ->
 						cb r, req, res
 					)
