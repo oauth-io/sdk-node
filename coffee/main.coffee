@@ -63,6 +63,8 @@ module.exports = ->
 
 		redirect: (cb) ->
 			return (req, res) ->
+				if typeof req.query != 'object'
+					return cb (new Error "req.query must be an object (did you used a query parser?)"), req, res
 				authentication.authenticate((JSON.parse req.query.oauthio).data.code, req.session)
 					.then((r) ->
 						cb r, req, res
@@ -72,7 +74,9 @@ module.exports = ->
 					)
 
 		authRedirect: (provider, urlToRedirect) ->
-			return (req, res) ->
+			return (req, res, next) ->
+				if typeof req.session != 'object' && typeof next == 'function'
+					return next new Error "req.session must be an object (did you used a session middleware?)"
 				authentication.redirect provider, urlToRedirect, req, res
 
 		refreshCredentials: (credentials, session) ->
