@@ -15,6 +15,21 @@ Features
 With this SDK, your OAuth flow is also more secure as the oauth token never
 leaves your backend.
 
+Requirement
+-----------
+
+[Express-session](https://github.com/expressjs/session) is required:
+
+```js
+var session = require('express-session'); 
+...
+app.use(session({
+    secret: 'some secret',
+    resave: false,
+    saveUninitialized: true
+}));
+```
+
 Installation
 ------------
 
@@ -32,7 +47,7 @@ var OAuth = require('oauthio');
 
 To use this SDK, you need to create an account (if you don't have one yet) on [oauth.io](https://oauth.io), create an app in the [Dashboard](https://oauth.io/dashboard) and add a provider to that app.
 
-You'll have to go on the provider's website to register a new app, and copy its keys on oauth.io. **Don't forget to select the Node.js backend on OAuth.io.**
+You'll have to go on the provider's website to register a new app, and copy its keys on oauth.io.
 
 Initializing the SDK
 --------------------
