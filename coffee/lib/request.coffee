@@ -19,7 +19,7 @@ module.exports = (cache) ->
 				tokens =
 					oauth_token: r.oauth_token
 					oauth_token_secret: r.oauth_token_secret
-			headers = 
+			headers =
 				oauthio:
 					k: cache.public_key
 			if (tokens.oauth_token and tokens.oauth_token_secret)
@@ -41,13 +41,14 @@ module.exports = (cache) ->
 				method: method,
 				url: url,
 				headers: headers,
-				form: options,
+				form: if options && !options.json then options else null,
+				json: if options then options.json else null,
 				qs: get_options
 			}
 
 			request(options, (error, r, body) ->
 				response = undefined
-				if body? and r.statusCode == 200
+				if body? and r.statusCode >= 200 and r.statusCode < 300
 					if typeof body is 'string'
 						try
 							response = JSON.parse body
@@ -80,7 +81,7 @@ module.exports = (cache) ->
 					oauth_token: r.oauth_token
 					oauth_token_secret: r.oauth_token_secret
 
-			headers = 
+			headers =
 				oauthio:
 					k: cache.public_key
 			if (tokens.oauth_token and tokens.oauth_token_secret)
@@ -124,4 +125,3 @@ module.exports = (cache) ->
 
 			return defer.promise
 	}
-	
