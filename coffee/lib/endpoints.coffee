@@ -16,7 +16,6 @@ module.exports = (csrf_generator, cache, authentication) ->
 		#		)
 
 		app.get '/oauth/redirect', (req, res) =>
-			console.log 'uh?', req.query, req.session
 			authentication.authenticate((JSON.parse req.query.oauthio).data.code, req.session)
 				.then((r) ->
 					cache.redirect_cb r, req, res
