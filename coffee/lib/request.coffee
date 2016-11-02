@@ -58,7 +58,7 @@ module.exports = (cache) ->
 					defer.resolve response
 					return
 				else
-					defer.reject "An error occured while performing the request"
+					defer.reject {error:error,body:body,status:r.statusCode,message:r.statusMessage};
 				if error
 					defer.reject error
 			);
