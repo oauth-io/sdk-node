@@ -45,7 +45,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-coffee');
     grunt.loadNpmTasks('grunt-concurrent');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
 
     grunt.registerTask('coverage', 'Creates a tests coverage report', function() {
         var exec = require('child_process').exec;
