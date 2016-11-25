@@ -42,6 +42,8 @@ module.exports = (csrf_generator, cache, requestio) ->
 			return defer.promise
 
 		redirect: (provider, urlToRedirect, req, res) ->
+			if cache.logging
+				cache.log "[oauthio] Redirect to " + cache.oauthd_url + cache.oauthd_base + '/' + provider + " with k=" + cache.public_key + " and redirect_uri=" + urlToRedirect + " from " + (req.get && req.get('Host'))
 			csrf_token = csrf_generator(req.session)
 			res.writeHead 302, Location: cache.oauthd_url + cache.oauthd_base + '/' + provider + '?k=' + cache.public_key + '&opts=' + encodeURIComponent(JSON.stringify({state: csrf_token})) + '&redirect_type=server&redirect_uri=' + encodeURIComponent(urlToRedirect)
 			res.end()
@@ -114,12 +116,23 @@ module.exports = (csrf_generator, cache, requestio) ->
 					defer.reject new Error 'OAuth.io response could not be parsed'
 					return
 
+				if cache.logging
+					cache.hideInLog response.access_token if response.access_token
+					cache.hideInLog response.id_token if response.id_token
+					cache.hideInLog response.oauth_token if response.oauth_token
+					cache.hideInLog response.oauth_token_secret if response.oauth_token_secret
+					cache.hideInLog response.code if response.code
+					cache.hideInLog response.state if response.state
+					cache.log "[oauthio] From POST " + cache.oauthd_url + cache.oauthd_base + '/access_token (' + r.statusCode + '): ', body
+
 				if (response.status? and response.status == 'error' and response.message?)
 					defer.reject new Error 'OAuth.io / oauthd responded with : ' + response.message
 				if (not response.state?)
 					defer.reject new Error 'State is missing from response'
 					return
 				if (not session?.csrf_tokens? or response.state not in session.csrf_tokens)
+					if cache.logging
+						cache.log "[oauthio] State is not matching: " + response.state + " not in session (" + session?.oauthio_logging + "):", session?.csrf_tokens
 					defer.reject new Error 'State is not matching'
 				if response.expires_in
 					response.expires = new Date().getTime() + response.expires_in * 1000
