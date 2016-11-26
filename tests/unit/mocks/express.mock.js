@@ -1,7 +1,9 @@
 var endpoints = [];
 var events = require('events');
 var emitter = new events.EventEmitter();
-var session = {};
+var session = {
+	reload: (cb) => cb()
+};
 module.exports = function() {
 	return {
 		getEndpoint: function(url) {
@@ -61,7 +63,7 @@ module.exports = function() {
 		},
 		callEndpoint: function(url, params, i) {
 			var base = this;
-			
+
 			i = i || 0;
 			params = params || {};
 			params.method = params.method || 'GET';

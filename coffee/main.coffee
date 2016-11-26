@@ -28,6 +28,8 @@ module.exports = ->
 			if not cache.__hiddenLog[hidden]
 				cache.__hiddenLog[hidden] = ++cache.__hiddenLogCount
 	cache.log = () ->
+		if cache.logging?.silent
+			return
 		args = []
 		for arg in arguments
 			arg = JSON.stringify(arg) if (typeof arg) == 'object'
@@ -86,7 +88,7 @@ module.exports = ->
 				authentication.auth provider, session, opts
 
 		redirect: (cb) ->
-			return (req, res) ->
+			return (req, res, next) ->
 				if typeof req.query != 'object'
 					return cb (new Error "req.query must be an object (did you used a query parser?)"), req, res
 				if typeof req.query.oauthio == 'undefined'
@@ -110,17 +112,18 @@ module.exports = ->
 					return cb (new Error "Could not find code from oauthio results"), req, res
 				authentication.authenticate(oauthio_data.data.code, req.session)
 					.then((r) ->
-						cb r, req, res
+						cb r, req, res, next
 					)
 					.fail((e) ->
-						cb e, req, res
+						cb e, req, res, next
 					)
 
 		authRedirect: (provider, urlToRedirect) ->
 			return (req, res, next) ->
 				if typeof req.session != 'object' && typeof next == 'function'
 					return next new Error "req.session must be an object (did you used a session middleware?)"
-				authentication.redirect provider, urlToRedirect, req, res
+				authentication.redirect provider, urlToRedirect, req, res, next
+				return
 
 		refreshCredentials: (credentials, session) ->
 			return authentication.refresh_tokens credentials, session, true
