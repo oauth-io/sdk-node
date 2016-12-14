@@ -33,10 +33,11 @@ module.exports = ->
 		args = []
 		for arg in arguments
 			arg = JSON.stringify(arg) if (typeof arg) == 'object'
-			arg = arg.toString()
-			for k, v of cache.__hiddenLog
-				arg = arg.replace k, "[hidden-" + v + "]"
-			args.push arg
+			if arg?
+				arg = arg.toString()
+				for k, v of cache.__hiddenLog
+					arg = arg.replace k, "[hidden-" + v + "]"
+				args.push arg
 		console.log.apply(console, args)
 
 	oauth =  {
